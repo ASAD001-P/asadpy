@@ -39,5 +39,8 @@ jobs:
 
       # 5. Execute the pytest suite!
       - name: Run Pytest
-        run: |
-          pytest
+      env:
+        SECRET_KEY: "ci_pipeline_dummy_secret_key_for_testing_only"
+        DATABASE_URL: "postgresql+asyncpg://postgres:postgrespassword@localhost:5432/fastapi_db"
+      run: |
+        pytest
