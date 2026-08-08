@@ -1,9 +1,15 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.core.database import engine
 from app.routers import auth, products
+
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -11,6 +17,9 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 app = FastAPI(title="Production FastAPI Store", lifespan=lifespan)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,7 +30,8 @@ app.add_middleware(
 )
 
 @app.get("/")
-async def root():
+@limiter.limit("10/minute")
+async def root(request: Request):
     return {"message": "Welcome to AsadPy API! Visit /docs for interactive documentation."}
 
 # Include Routers

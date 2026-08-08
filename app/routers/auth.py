@@ -1,7 +1,9 @@
 from datetime import timedelta
 import asyncio
 import jwt
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -12,6 +14,7 @@ from app.core.database import get_session
 from app.core.security import ph, create_access_token
 from app.models.user import User, UserCreate, UserResponse, Token
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -44,7 +47,9 @@ async def get_current_user(
     return user
 
 @router.post("/register", response_model=UserResponse)
+@limiter.limit("5/minute")
 async def register_user(
+    request: Request,
     user_data: UserCreate,
     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
@@ -77,7 +82,9 @@ async def register_user(
     return new_user
 
 @router.post("/login", response_model=Token)
+@limiter.limit("10/minute")
 async def login_user(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session)
 ):
