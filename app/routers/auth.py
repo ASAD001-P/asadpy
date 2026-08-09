@@ -1,30 +1,28 @@
 from datetime import timedelta
-import asyncio
 import jwt
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 import argon2.exceptions as argon2_exceptions
+from arq import create_pool
 
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.security import ph, create_access_token
 from app.models.user import User, UserCreate, UserResponse, Token
+from app.worker import get_redis_settings
 
 limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-async def send_welcome_email(email: str, username: str):
-    await asyncio.sleep(3)
-    print(f" [BACKGROUND TASK] Welcome email sent successfully to {username} ({email})!")
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    session: AsyncSession = Depends(get_session) # Works now because get_session exists above!
+    session: AsyncSession = Depends(get_session)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,13 +44,13 @@ async def get_current_user(
         raise credentials_exception
     return user
 
+
 @router.post("/register", response_model=UserResponse)
 @limiter.limit("5/minute")
 async def register_user(
     request: Request,
     user_data: UserCreate,
-    background_tasks: BackgroundTasks,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session)  # 👈 Removed background_tasks
 ):
     statement = select(User).where(User.username == user_data.username)
     result = await session.exec(statement)
@@ -75,11 +73,17 @@ async def register_user(
     session.add(new_user)
     await session.commit()
     await session.refresh(new_user)
+
+    # 🚀 Enqueue job into Redis via ARQ for dedicated worker processing
     if new_user.email:
-        background_tasks.add_task(
-            send_welcome_email, email=new_user.email, username=new_user.username
-        )
+        try:
+            redis = await create_pool(get_redis_settings())
+            await redis.enqueue_job('send_welcome_email_task', email=new_user.email, username=new_user.username)
+        except Exception as e:
+            print(f"Failed to enqueue task to ARQ worker: {e}")
+
     return new_user
+
 
 @router.post("/login", response_model=Token)
 @limiter.limit("10/minute")
@@ -115,6 +119,7 @@ async def login_user(
     )
     
     return Token(access_token=access_token, token_type="bearer")
+
 
 @router.get("/users/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_user)):
