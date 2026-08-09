@@ -7,8 +7,12 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlmodel import select
+from redis import asyncio as aioredis
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 
-from app.core.database import engine, get_session
+from app.core.config import settings
+from app.core.database import engine
 from app.routers import auth, products
 
 logging.basicConfig(
@@ -22,6 +26,13 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up FastAPI Store application...")
+    try:
+        redis = aioredis.from_url(settings.REDIS_URL, encoding="utf8", decode_responses=True)
+        FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
+        logger.info("Redis cache initialized successfully.")
+    except Exception as e:
+        logger.warning(f"Failed to connect to Redis: {e}")
+        
     yield
     logger.info("Shutting down and disposing database engine...")
     await engine.dispose()

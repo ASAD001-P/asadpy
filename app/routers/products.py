@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from fastapi_cache.decorator import cache
 
 from app.core.database import get_session
-from app.models.product import Product, ProductCreate
+from app.models.product import Product, ProductCreate, ProductResponse
 from app.models.user import User
 from app.routers.auth import get_current_user
 
@@ -23,7 +24,8 @@ async def create_product(
     await session.refresh(db_product)
     return db_product
 
-@router.get("", response_model=list[Product])
+@router.get("", response_model=list[ProductResponse])
+@cache(expire=60)
 async def read_products(
     session: AsyncSession = Depends(get_session)
 ):

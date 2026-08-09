@@ -13,7 +13,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # 2. FastAPI Application Container
+  # 2. Redis Caching Container
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # 3. FastAPI Application Container
   web:
     build: .
     container_name: fastapi_app
@@ -29,8 +37,11 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=30
       # Points directly to the 'db' container service name!
       - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@db:5432/fastapi_db
+      # Points directly to the 'redis' container service name!
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - db
+      - redis
 
 volumes:
   postgres_data:
