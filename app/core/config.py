@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -6,6 +7,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     DATABASE_URL: str
     REDIS_URL: str = "redis://localhost:6379"
+    SENTRY_DSN: Optional[str] = None
 
     # Automatically reads from .env in the root directory
     model_config = SettingsConfigDict(
