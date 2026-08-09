@@ -2,6 +2,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from arq.worker import Worker
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,7 +20,19 @@ from sqlmodel import select
 from app.core.config import settings
 from app.core.database import engine
 from app.routers import auth, products
-from app.worker import WorkerSettings  # 👈 Imports worker functions & redis settings
+from app.worker import WorkerSettings  
+
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        integrations=[
+            FastApiIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        traces_sample_rate=1.0,  
+        profiles_sample_rate=1.0,
+        environment="production",
+    )
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,6 +91,10 @@ app.add_middleware(
 async def root(request: Request):
     return {"message": "Welcome to AsadPy API! Visit /docs for interactive documentation."}
 
+@app.get("/sentry-debug", tags=["Monitoring"])
+async def trigger_sentry_error():
+    zero_division = 1 / 0
+    return {"result": zero_division}
 
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["Monitoring"])
 async def health_check():
