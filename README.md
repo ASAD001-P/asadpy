@@ -1,6 +1,6 @@
 # AsadPy - Asynchronous FastAPI Store Engine
 
-A production-ready asynchronous Python REST API built with FastAPI, SQLModel, Alembic, and PostgreSQL, fully containerized with Docker and deployed on Render.
+A high-performance, production-ready asynchronous Python REST API built with FastAPI, SQLModel, Alembic, PostgreSQL, Redis, and ARQ—fully containerized with Docker, monitored by Sentry, and deployed on Render.
 
 ## 🚀 Live Demo & Endpoints
 * **Base API**: https://asadpy-api.onrender.com
@@ -8,17 +8,23 @@ A production-ready asynchronous Python REST API built with FastAPI, SQLModel, Al
 * **Health Check**: https://asadpy-api.onrender.com/health
 
 ## 🌟 Key Features
-* **Asynchronous ORM**: High-performance database operations using `SQLModel` and `asyncpg`.
-* **Database Migrations**: Automatic schema version control managed by `Alembic`.
-* **Security**: Argon2id password hashing and OAuth2 Bearer JWT authentication.
-* **Rate Limiting**: Protected authentication routes via `slowapi` to mitigate brute-force attacks.
-* **Containerization**: Dockerized multi-stage builds running in production.
-* **CI/CD Pipeline**: GitHub Actions running `pytest` test suites on every pull request.
+* **Asynchronous ORM**: High-performance async database operations using `SQLModel` and `asyncpg`.
+* **In-Memory Caching**: Ultra-fast response caching using `Redis` and `fastapi-cache2` to reduce database load.
+* **Background Task Queue**: Asynchronous job processing for email delivery and background tasks using `ARQ` and Redis.
+* **Observability & Error Tracking**: Real-time error reporting and performance tracing integrated with `Sentry`.
+* **Database Migrations**: Schema version management handled automatically with `Alembic`.
+* **Security & Auth**: Argon2id password hashing and OAuth2 Bearer JWT authentication.
+* **Rate Limiting**: Protection against brute-force attacks on sensitive endpoints via `slowapi`.
+* **Containerization**: Dockerized multi-stage builds running seamlessly in production.
+* **CI/CD Pipeline**: Automated unit/integration test execution via GitHub Actions on every pull request.
 
 ## 🛠️ Tech Stack
 - **Language**: Python 3.12+
 - **Framework**: FastAPI
 - **Database**: PostgreSQL
-- **ORM**: SQLModel / SQLAlchemy
-- **Containerization**: Docker
-- **Hosting**: Render & Vercel
+- **Caching & Broker**: Redis
+- **Async Queue**: ARQ
+- **Monitoring**: Sentry
+- **ORM & Migrations**: SQLModel / Alembic
+- **Containerization**: Docker & Docker Compose
+- **Hosting**: Render (Backend) & Vercel (Frontend)
