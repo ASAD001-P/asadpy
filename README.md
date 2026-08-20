@@ -22,7 +22,7 @@ A high-performance, production-ready asynchronous Python REST API built with Fas
 ## 🛠️ Tech Stack
 - **Language**: Python 3.12+
 - **Framework**: FastAPI
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL(Supabase)
 - **Caching & Broker**: Redis
 - **Async Queue**: ARQ
 - **Monitoring**: Sentry
