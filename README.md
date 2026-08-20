@@ -6,6 +6,7 @@ A high-performance, production-ready asynchronous Python REST API built with Fas
 * **Base API**: https://asadpy-api.onrender.com
 * **Interactive Docs**: https://asadpy-api.onrender.com/docs
 * **Health Check**: https://asadpy-api.onrender.com/health
+* **Demo UI**:https://asadpy-frontend.vercel.app/
 
 ## 🌟 Key Features
 * **Asynchronous ORM**: High-performance async database operations using `SQLModel` and `asyncpg`.
